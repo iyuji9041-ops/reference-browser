@@ -1,4 +1,72 @@
-#  Reference Browser
+# Reference Browser (Custom Browser Project)
+
+> **Important Note for AI Assistant / Developer (Project Overview & Roadmap)**:
+> This workspace contains the **Mozilla Reference Browser** (`org.mozilla.reference.browser`), built with **Mozilla GeckoView** and **Android Components**.
+> Read the section below for full project context, existing features, diagnosed issues, planned customizations, and build instructions.
+
+---
+
+## 📌 Project Context & Custom Roadmap (PocketDev Workspace)
+
+### 1. Project Identification
+- **App Name:** Reference Browser (Target: Custom Android Web Browser)
+- **Package:** `org.mozilla.reference.browser`
+- **Core Engine:** **GeckoView** (same Gecko engine powering Mozilla Firefox for Android)
+- **Framework:** Mozilla Android Components + Jetpack Compose
+- **Status:** Complete, fully-functional ready-made web browser source code.
+
+### 2. Existing Features (Pehle se mojud features)
+- **Engine:** GeckoView (HTML5, modern ES6+ JS, CSS3, WebAssembly, WebGL, WebAuthn).
+- **Navigation:** AwesomeBar (URL address bar + integrated search suggestions + SSL indicators).
+- **Tabs:** Normal multi-tab tray + Private Browsing (Incognito) mode with custom styling.
+- **Extensions:** Full support for Firefox WebExtensions (Add-ons manager, AMO overrides).
+- **Sync & Accounts:** Firefox Accounts (FxA) sync for open tabs, history, passwords, and QR pairing.
+- **Media & Utilities:** Picture-in-Picture (PiP) video, background media playback controls, Download Manager, Reader View, Find-in-page, Autofill service, Android Custom Tabs.
+
+---
+
+### 3. Diagnosed Issue: Google AI Studio Slowness on Gecko/Firefox
+- **Observation:** When using Google AI Studio (`aistudio.google.com/apps/...`), the app takes ~1+ minute "thinking/launching" before streaming code, whereas on Brave (Chromium) it is instantaneous.
+- **Root Causes:**
+  1. **Chromium Optimization:** Google AI Studio is heavily optimized for Chromium/V8 WebAssembly and streaming APIs.
+  2. **Enhanced Tracking Protection (ETP):** Firefox/Gecko's ETP blocks or throttles background telemetry, cross-origin web workers, and Server-Sent Events (SSE) streaming connections used by Google AI Studio.
+  3. **Client-side Container/Wasm:** AI Studio runs a client-side container (`Launching...`) that initialises slower on GeckoView than on V8.
+  4. **User-Agent Discrimination:** Google serves different/fallback JavaScript bundles to non-Chromium user agents.
+
+---
+
+### 4. Planned Roadmap & Tasks
+1. **Performance Fixes for Google AI Studio & Heavy Web Apps:**
+   - **User-Agent Spoofing:** Configure GeckoView (`GeckoRuntimeSettings` / `GeckoSession`) to send a modern Chrome/Chromium User-Agent for Google domains (or globally), forcing Google to serve its fast-path assets.
+   - **Tracking Protection Whitelist:** Relax/whitelist ETP rules for trusted developer platforms (like `aistudio.google.com`, `firebase`, etc.) so streaming/websockets are never blocked.
+   - **GeckoView Performance Flags:** Optimize WebAssembly JIT, caching, and hardware acceleration in `EngineProvider.kt` / `BrowserApplication.kt`.
+2. **App Branding & Customizations:**
+   - Change App Name in `app/src/main/res/values/strings.xml` (`app_name`).
+   - Replace launcher icons and splash screens in `app/src/main/res/mipmap-*` and `res/drawable-*`.
+   - Customize default search engines (Google, DuckDuckGo, Bing, etc.).
+   - Customize Home Page / New Tab Page UI and default bookmarks/shortcuts.
+   - Theme and colors adjustments (`res/values/colors.xml`, `style.xml`).
+3. **Build & Test Debug APK:**
+   - Compile debug APK using the PocketDev build script (see commands below).
+
+---
+
+### 5. Build Instructions (PocketDev Environment Rules)
+> **CRITICAL:** Never run plain `gradle build` or start a Gradle daemon. Build debug APK only.
+- **Check existing APK:** Check `app/build/outputs/apk/debug/` first.
+- **First Build (Dependencies Resolution):**
+  ```bash
+  timeout 15m gradle -Dorg.gradle.jvmargs= --no-daemon --max-workers=2 --init-script /root/.gradle/init.d/pocketdev-android.gradle -Pandroid.aapt2FromMavenOverride=/root/android-sdk/build-tools/35.0.0/aapt2 assembleDebug --console=plain --stacktrace
+  ```
+- **Cached Fast Path (When APK/dependencies exist):**
+  ```bash
+  timeout 5m gradle -Dorg.gradle.jvmargs= --no-daemon --max-workers=2 --offline --init-script /root/.gradle/init.d/pocketdev-android.gradle -Pandroid.aapt2FromMavenOverride=/root/android-sdk/build-tools/35.0.0/aapt2 assembleDebug --console=plain --stacktrace
+  ```
+- If cached build fails due to missing dependency, retry once online with `timeout 15m` without `--offline`.
+
+---
+
+# Reference Browser Original Documentation
 
 [![Task Status](https://firefox-ci-tc.services.mozilla.com/api/github/v1/repository/mozilla-mobile/reference-browser/main/badge.svg)](https://firefox-ci-tc.services.mozilla.com/tasks/index/mobile.v2.reference-browser.nightly.latest) [![chat.mozilla.org](https://img.shields.io/badge/chat-on%20matrix-51bb9c)](https://chat.mozilla.org/#/room/#android-components:mozilla.org)
 
